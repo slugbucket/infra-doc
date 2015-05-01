@@ -63,6 +63,43 @@ class InfraDoc < Prawn::Document
       draw_text "This document is confidential and should not be distributed outside of Groovy Widgets Inc", :at => [50, 50], :size => 10
 	end
   end
+    ###
+  ### Method to export an application's details ###
+  ### app: InfraApplication object describing the application
+  ###
+  def application_page(app = nil)
+    nil unless app.id
+
+    start_new_page
+	# Get the host details
+	puts "Preparing host information."
+	app.hosts.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
+	
+	bounding_box([50,700], :width => 450, :height => 650) do
+	  appinfo = [
+        [{:content => app.name, :colspan => 4, :align => :left}],
+        ["Type: #{app.application_type_name}", "Status : #{app.application_status_name}", "Vendor : #{app.vendor_name}", "Shutdown: #{app.dr_shutdown_stage_name}"],
+        [{:content => app.description, :colspan => 4, :align => :left}],
+        ["Contact: #{app.support_contact_name}",
+         "Group: #{app.support_group_name}",
+         "Impact: #{app.impact_level_name}",
+         "Escalation: #{app.escalation_level_name}"],
+        [{:content => "Hosts", :colspan => 4}],
+        [{:content => "Databases", :colspan => 4}]
+      ]
+      table appinfo, :cell_style => {:overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080"} do
+        row(0).font_style = :bold
+        row(0).background_color = "c0c0c0"
+        row(1).background_color = "e0e0e0"
+        row(3).background_color = "e0e0e0"
+        row(4).font_style = :bold
+        row(4).background_color = "c0c0c0"
+        row(5).font_style = :bold
+        row(5).background_color = "c0c0c0"
+      end
+    end
+  end
+  
   private
   def heading()
     # Document heading

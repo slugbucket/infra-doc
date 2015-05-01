@@ -24,10 +24,9 @@ begin
 
   stmta = "SELECT TOP 10 id FROM applications ORDER BY name"
 
-  #stha = client.prepare(stmta);
   result = client.execute(stmta)
   result.each(:symbolize_keys => true)
-#
+
   if result.do then
   puts "Processing #{result.do} applications... "
 #    #fh = File.open(tmpfile, 'w')
@@ -35,33 +34,8 @@ begin
     result.each do |rowset|
 #	  puts "Appname: #{rowset[:name]}."
       app = InfraApplication.new(client, rowset[:id])
-      app.name
-	  pdf.start_new_page
-	  pdf.bounding_box([50,700], :width => 450, :height => 650) do
-	    appinfo = [
-		[{:content => app.name, :colspan => 4, :align => :left}],
-		["Type: #{app.application_type_name}", "Status : #{app.application_status_name}", "Vendor : #{app.vendor_name}", "Shutdown: #{app.dr_shutdown_stage_name}"],
-		[{:content => app.description, :colspan => 4, :align => :left}],
-		["Contact: #{app.support_contact_name}",
-		 "Group: #{app.support_group_name}",
-		 "Impact: #{app.impact_level_name}",
-		 "Escalation: #{app.escalation_level_name}"],
-		[{:content => "Hosts", :colspan => 4}],
-		[{:content => "Databases", :colspan => 4}]
-		]
-	    pdf.table appinfo, :cell_style => {:overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080"} do
-	    row(0).font_style = :bold
-	    row(0).background_color = "c0c0c0"
-	    row(1).background_color = "e0e0e0"
-		row(3).background_color = "e0e0e0"
-		row(4).font_style = :bold
-	    row(4).background_color = "c0c0c0"
-		row(5).font_style = :bold
-	    row(5).background_color = "c0c0c0"
-	end
-	    #pdf.text "#{app.name} - #{app.application_type_name} : #{app.description}", :size => 10
-	    #pdf.stroke_bounds
-	  end
+	  pdf.application_page(app)
+
 	end
   end
 
@@ -75,8 +49,7 @@ begin
 
   rescue TinyTds::Error => e
     puts "An error occurred"
-    puts "Error code: #{e.err}"
-    puts "Error message: #{e.errstr}"
+    puts "Error message: #{e}"
     ensure # Stuff that must be done at the end of the script
 #    # disconnect from server
     client.close if client
