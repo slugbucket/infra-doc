@@ -72,8 +72,8 @@ class InfraDoc < Prawn::Document
 
     start_new_page
 	# Get the host details
-	puts "Preparing host information."
-	app.hosts.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
+	#app.hosts.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
+	host_row = get_hosts_table(app.hosts)
 	
 	bounding_box([50,700], :width => 450, :height => 650) do
 	  appinfo = [
@@ -85,6 +85,7 @@ class InfraDoc < Prawn::Document
          "Impact: #{app.impact_level_name}",
          "Escalation: #{app.escalation_level_name}"],
         [{:content => "Hosts", :colspan => 4}],
+		[{:content => host_row, :colspan => 4}],
         [{:content => "Databases", :colspan => 4}]
       ]
       table appinfo, :cell_style => {:overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080"} do
@@ -97,7 +98,10 @@ class InfraDoc < Prawn::Document
         row(5).font_style = :bold
         row(5).background_color = "c0c0c0"
       end
+	  
     end
+	start_new_page
+	table host_row
   end
   
   private
@@ -132,5 +136,22 @@ class InfraDoc < Prawn::Document
 	  row(0).font_style = :bold
 	  rows(1..4).background_color = "e0e0e0"
 	end
+  end
+  ###
+  ### Get an array of hosts with suitable additional support information ###
+  ###
+  def get_hosts_table(host_ary = nil)
+    host_ary.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
+	rows = []
+	host_ary.each do |id, host| 
+	  puts "Making row for #{host.name}"
+	  row = []
+	  row << host.name << host.operating_system_name << host.warranty
+	  puts row
+	  rows << row
+	end
+	#puts rows
+	#t = make_table rows, {:column_widths => [100, 100, 250], :cell_style => {:size => 6, :overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080", :background_color => "e0e0e0"} }
+	return rows
   end
 end

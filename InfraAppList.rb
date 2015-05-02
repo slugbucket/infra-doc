@@ -1,35 +1,33 @@
 class InfraApplication
   def initialize(dbh, id)
-    dbh = dbh
-	@id = id
-    #@dbh = TinyTds::Client.new username: 'istapplist_dev', password: 'istapplist_dev', host: 'localhost', database: 'istapplist_dev'
-	qry = "SELECT * FROM applications WHERE id = '#{id}'"
+    @id = id
+    qry = "SELECT * FROM applications WHERE id = '#{id}'"
 	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
-	  @application_type_id = row[:application_type_id]
+	  @name                  = row[:name]
+	  @application_type_id   = row[:application_type_id]
 	  @application_status_id = row[:application_status_id]
-	  @vendor_id = row[:vendor_id]
-	  @support_contact_id = row[:support_contact_id]
-	  @support_group_id = row[:support_group_id]
-	  @description = row[:description]
-	  @escalation_level_id = row[:escalation_level_id]
-	  @impact_level_id = row[:impact_level_id]
-	  @impact_hour_id = row[:impact_hour_id]
-	  @dr_shutdown_stage_id = row[:dr_shutdown_stage_id]
-	  @created_at = row[:created_at]
-	  @updated_at = row[:updated_at]
+	  @vendor_id             = row[:vendor_id]
+	  @support_contact_id    = row[:support_contact_id]
+	  @support_group_id      = row[:support_group_id]
+	  @description           = row[:description]
+	  @escalation_level_id   = row[:escalation_level_id]
+	  @impact_level_id       = row[:impact_level_id]
+	  @impact_hour_id        = row[:impact_hour_id]
+	  @dr_shutdown_stage_id  = row[:dr_shutdown_stage_id]
+	  @created_at            = row[:created_at]
+	  @updated_at            = row[:updated_at]
 	end
 	result.cancel
-	@app_type = InfraApplicationType.new(dbh, @application_type_id) if @application_type_id
-	@app_status = InfraApplicationStatus.new(dbh, @application_status_id)
-	@vendor = InfraApplicationStatus.new(dbh, @vendor_id)
-	@support_contact = InfraSupportContact.new(dbh, @support_contact_id)
-	@support_group = InfraSupportGroup.new(dbh, @support_group_id)
-	@escalation_level = InfraEscalationLevel.new(dbh, @escalation_level_id)
-	@impact_level = InfraImpactLevel.new(dbh, @impact_level_id)
-	@impact_hour = InfraImpactHour.new(dbh, @impact_hour_id)
+	@app_type          = InfraApplicationType.new(dbh, @application_type_id) if @application_type_id
+	@app_status        = InfraApplicationStatus.new(dbh, @application_status_id)
+	@vendor            = InfraApplicationStatus.new(dbh, @vendor_id)
+	@support_contact   = InfraSupportContact.new(dbh, @support_contact_id)
+	@support_group     = InfraSupportGroup.new(dbh, @support_group_id)
+	@escalation_level  = InfraEscalationLevel.new(dbh, @escalation_level_id)
+	@impact_level      = InfraImpactLevel.new(dbh, @impact_level_id)
+	@impact_hour       = InfraImpactHour.new(dbh, @impact_hour_id)
 	@dr_shutdown_stage = InfraDrShutdownStage.new(dbh, @dr_shutdown_stage_id)
 	# Grab the hosts details from the association table
 	qry = "SELECT host_id FROM application_hosts WHERE application_id = #{id}"
@@ -114,13 +112,12 @@ end
 ###
 class InfraApplicationType
   def initialize(dbh, id)
-    dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM application_types WHERE id = '#{id}'"
 	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -133,10 +130,9 @@ class InfraApplicationType
 end
 class InfraApplicationStatus
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM application_statuses WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
 	  @name = row[:name]
@@ -151,13 +147,12 @@ end
 ###
 class InfraVendor
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM vendors WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -176,13 +171,12 @@ end
 ###
 class InfraAppUserType
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM app_user_types WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -195,16 +189,15 @@ class InfraAppUserType
 end
 class InfraAppUser
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM app_users WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
-	@app_user_type = InfraAppUserType.new(@dbh, row[:app_user_type_id])
+	@app_user_type = InfraAppUserType.new(dbh, row[:app_user_type_id])
   end
   def name
     @name
@@ -224,13 +217,12 @@ end
 ###
 class InfraSupportContact
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM support_contacts WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -243,13 +235,12 @@ class InfraSupportContact
 end
 class InfraSupportGroup
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM support_groups WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -265,13 +256,12 @@ end
 ###
 class InfraEscalationLevel
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM escalation_levels WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -284,13 +274,12 @@ class InfraEscalationLevel
 end
 class InfraImpactLevel
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM impact_levels WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -303,13 +292,12 @@ class InfraImpactLevel
 end
 class InfraImpactHour
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM impact_hours WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -325,13 +313,12 @@ end
 ###
 class InfraDrShutdownStage
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM dr_shutdown_stages WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -350,15 +337,14 @@ end
 ###
 class InfraAdDomain
   def initialize(dbh, id)
-    dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM ad_domains WHERE id = '#{id}'"
 	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
-	  @active = row[:active]
+	  @active      = row[:active]
 	end
   end
   def name
@@ -373,13 +359,12 @@ class InfraAdDomain
 end
 class InfraDrMethod
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM dr_methods WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -392,13 +377,12 @@ class InfraDrMethod
 end
 class InfraLocation
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM locations WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -411,17 +395,16 @@ class InfraLocation
 end
 class InfraModel
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM models WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
-	  @vendor_id = row[:vendor_id]
+	  @vendor_id   = row[:vendor_id]
 	end
-	@vendor = InfraVendor.new(@dbh, @vendor_id)
+	@vendor = InfraVendor.new(dbh, @vendor_id)
   end
   def name
     @name
@@ -438,16 +421,14 @@ class InfraModel
 end
 class InfraOobRemoteMngmt
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM oob_remote_mngmts WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
-	@vendor = InfraApplicationStatus.new(@dbh, @vendor_id)
   end
   def name
     @name
@@ -458,15 +439,14 @@ class InfraOobRemoteMngmt
 end
 class InfraOperatingSystem
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM operating_systems WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
-	  @expiry = row[:expiry]
+	  @expiry      = row[:expiry]
 	end
   end
   def name
@@ -481,13 +461,12 @@ class InfraOperatingSystem
 end
 class InfraServiceLevel
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM service_levels WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name        = row[:name]
 	  @description = row[:description]
 	end
   end
@@ -500,36 +479,36 @@ class InfraServiceLevel
 end
 class InfraHost
   def initialize(dbh, id)
-    dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM hosts WHERE id = '#{id}'"
 	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
-	  @ad_domain_id = row[:ad_domain_id]
-	  @asset_tag = row[:asset_tag]
-	  @description = row[:description]
-	  @dr_method_id = row[:dr_method_id]
-	  @location_id = row[:location_id]
-	  @model_id = row[:model_id]
-	  @name = row[:name]
+	  @active              = row[:active]
+	  @name                = row[:name]
+	  @ad_domain_id        = row[:ad_domain_id]
+	  @asset_tag           = row[:asset_tag]
+	  @description         = row[:description]
+	  @dr_method_id        = row[:dr_method_id]
+	  @location_id         = row[:location_id]
+	  @model_id            = row[:model_id]
+	  @name                = row[:name]
 	  @oob_remote_mngmt_id = row[:oob_remote_mngmt_id]
 	  @operating_system_id = row[:operating_system_id]
-	  @primary_use = row[:primary_use]
-	  @service_level_id = row[:service_level_id]
-	  @warranty = row[:warranty]
+	  @primary_use         = row[:primary_use]
+	  @service_level_id    = row[:service_level_id]
+	  @warranty            = row[:warranty]
 	end
-	@ad_domain = InfraAdDomain.new(dbh, @ad_domain_id)
-	@dr_method = InfraDrMethod.new(dbh, @dr_method_id)
-	@location = InfraLocation.new(dbh, @location_id)
-	@model = InfraModel.new(dbh, @model_id)
+	@ad_domain        = InfraAdDomain.new(dbh, @ad_domain_id)
+	@dr_method        = InfraDrMethod.new(dbh, @dr_method_id)
+	@location         = InfraLocation.new(dbh, @location_id)
+	@model            = InfraModel.new(dbh, @model_id)
 	@oob_remote_mngmt = InfraOobRemoteMngmt.new(dbh, @oob_remote_mngmt_id)
 	@operating_system = InfraOperatingSystem.new(dbh, @operating_system_id)
-	@service_level = InfraServiceLevel.new(dbh, @service_level_id)
+	@service_level    = InfraServiceLevel.new(dbh, @service_level_id)
   end
   def active
-    ()
+    @active
   end
   def description
     @description
@@ -573,11 +552,17 @@ class InfraHost
    def operating_system_name
     @operating_system.name
   end
+  def primary_use
+    @primary_use
+  end
   def service_level
     @service_level
   end
-   def service_level_name
+  def service_level_name
     @service_level.name
+  end
+  def warranty
+    @warranty
   end
 end
 ###
@@ -585,10 +570,9 @@ end
 ###
 class InfraDbInstance
   def initialize(dbh, id)
-    @dbh = dbh
-	@id = id
+    @id = id
 	qry = "SELECT * FROM db_instances WHERE id = '#{id}'"
-	result = @dbh.execute(qry)
+	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
 	  @name = row[:name]
