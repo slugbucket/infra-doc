@@ -17,6 +17,8 @@ class InfraDoc < Prawn::Document
     font_size 10
 	@info = {}
   end
+  # The method below should be to alternate the position of the page number on odd and even pages
+  # But it doesn't work: only adds the last odd number to the even page.
   def page_numbers
     string = "<page>"
     odd_options = { :at => [bounds.right - 150, 0],
@@ -60,7 +62,7 @@ class InfraDoc < Prawn::Document
   end
   def page_footer
     repeat(:all) do
-      draw_text "This document is confidential and should not be distributed outside of Groovy Widgets Inc", :at => [50, 50], :size => 10
+      draw_text "This document is confidential and should not be distributed outside of Groovy Widgets Inc", :at => [50, -20], :size => 10
 	end
   end
     ###
@@ -69,13 +71,14 @@ class InfraDoc < Prawn::Document
   ###
   def application_page(app = nil)
     nil unless app.id
-
+  puts "Preparing application table for #{app.name}, id #{app.id}"
     start_new_page
 	# Get the host details
-	#app.hosts.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
 	host_row = get_hosts_table(app.hosts)
-	
-	bounding_box([50,700], :width => 450, :height => 650) do
+	app_user_row = get_app_users_table(app.app_users)
+	didn_ary = get_database_names_and_instances(app.db_instance_db_names)
+
+	bounding_box([50,700], :width => 450, :height => 625) do
 	  appinfo = [
         [{:content => app.name, :colspan => 4, :align => :left}],
         ["Type: #{app.application_type_name}", "Status : #{app.application_status_name}", "Vendor : #{app.vendor_name}", "Shutdown: #{app.dr_shutdown_stage_name}"],
@@ -85,8 +88,11 @@ class InfraDoc < Prawn::Document
          "Impact: #{app.impact_level_name}",
          "Escalation: #{app.escalation_level_name}"],
         [{:content => "Hosts", :colspan => 4}],
-		[{:content => host_row, :colspan => 4}],
-        [{:content => "Databases", :colspan => 4}]
+		[{:content => host_row, :colspan => 4, :width => 450}],
+        [{:content => "Databases", :colspan => 4}],
+		["","","",""],
+		[{:content => "Users", :colspan => 4}],
+		[{:content => app_user_row, :colspan => 4, :width => 450}]
       ]
       table appinfo, :cell_style => {:overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080"} do
         row(0).font_style = :bold
@@ -95,13 +101,28 @@ class InfraDoc < Prawn::Document
         row(3).background_color = "e0e0e0"
         row(4).font_style = :bold
         row(4).background_color = "c0c0c0"
-        row(5).font_style = :bold
-        row(5).background_color = "c0c0c0"
+		row(5).background_color = "e0e0e0"
+		row(5).overflow = :shrink_to_fit
+		#row(5).border_line = :dashed
+		row(5).border_width = 0.1
+		row(5).border_color = "808080"
+        row(6).font_style = :bold
+        row(6).background_color = "c0c0c0"
+		row(7).background_color = "e0e0e0"
+		row(7).overflow = :shrink_to_fit
+		row(8).font_style = :bold
+        row(8).background_color = "c0c0c0"
+		row(9).background_color = "e0e0e0"
+		row(9).overflow = :shrink_to_fit
+		#row(9).border_line = :dashed
+		row(9).border_width = 0.1
+		row(9).border_color = "808080"
       end
 	  
     end
-	start_new_page
-	table host_row
+	#start_new_page
+	#puts "App user array for app id #{app.id} consists of #{app_user_row}"
+	#table app_user_row
   end
   
   private
@@ -141,13 +162,51 @@ class InfraDoc < Prawn::Document
   ### Get an array of hosts with suitable additional support information ###
   ###
   def get_hosts_table(host_ary = nil)
-    host_ary.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
+  return [["None", "", ""]] if host_ary.empty?
+    #host_ary.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
 	rows = []
 	host_ary.each do |id, host| 
-	  puts "Making row for #{host.name}"
+	  #puts "Making row for #{host.name}"
 	  row = []
 	  row << host.name << host.operating_system_name << host.warranty
-	  puts row
+	  #puts row
+	  rows << row
+	end
+	#puts rows
+	#t = make_table rows, {:column_widths => [100, 100, 250], :cell_style => {:size => 6, :overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080", :background_color => "e0e0e0"} }
+	return rows
+  end
+  ###
+  ### Get an array of application users with suitable additional support information ###
+  ###
+  def get_app_users_table(app_user_ary = nil)
+    return [["None", "", ""]] if app_user_ary.empty?
+	
+    #app_user_ary.each do |id, app_user| puts "Found app_user: #{id} name: #{app_user.name} at #{app_user.app_user_type.name}." end
+	rows = []
+	app_user_ary.each do |id, app_user| 
+	  row = []
+	  row << app_user.name << app_user.app_user_type_name << app_user.description
+	  rows << row
+	end
+	#puts rows
+	#t = make_table rows, {:column_widths => [100, 100, 250], :cell_style => {:size => 6, :overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080", :background_color => "e0e0e0"} }
+	return rows
+  end
+  ###
+  ### Get an array of databases and instances with suitable additional support information ###
+  ###
+  def get_database_names_and_instances(didn_ary = nil)
+  return [["None", "", ""]] if didn_ary.empty?
+  puts "Found #{didn_ary.size} database/instance pairs for the application."
+  
+  didn_ary.each do |id, didn| puts "Found instance: #{didn.db_instance_name} name: #{didn.db_name_name}." end
+	rows = []
+	didn_ary.each do |id, didn| 
+	  #puts "Making user row for #{app_user.name}"
+	  row = []
+	  row << didn.db_instance_name << didn.db_name_name << app_user.description
+	  #puts row
 	  rows << row
 	end
 	#puts rows

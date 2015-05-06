@@ -22,7 +22,7 @@ class InfraApplication
 	result.cancel
 	@app_type          = InfraApplicationType.new(dbh, @application_type_id) if @application_type_id
 	@app_status        = InfraApplicationStatus.new(dbh, @application_status_id)
-	@vendor            = InfraApplicationStatus.new(dbh, @vendor_id)
+	@vendor            = InfraVendor.new(dbh, @vendor_id)
 	@support_contact   = InfraSupportContact.new(dbh, @support_contact_id)
 	@support_group     = InfraSupportGroup.new(dbh, @support_group_id)
 	@escalation_level  = InfraEscalationLevel.new(dbh, @escalation_level_id)
@@ -31,12 +31,34 @@ class InfraApplication
 	@dr_shutdown_stage = InfraDrShutdownStage.new(dbh, @dr_shutdown_stage_id)
 	# Grab the hosts details from the association table
 	qry = "SELECT host_id FROM application_hosts WHERE application_id = #{id}"
-	res = dbh.execute(qry)
-	res.each(:symbolize_keys => true)
+	rs1 = dbh.execute(qry)
+	rs1.each(:symbolize_keys => true)
 	@hosts = Hash.new
-	if res.do then
-	  res.each do |row|
+	if rs1.do then
+	  rs1.each do |row|
 	    @hosts[row[:host_id]] = InfraHost.new(dbh, row[:host_id])
+	  end
+	end
+
+    # Grab the application user details from the association table
+	qry = "SELECT app_user_id FROM app_user_applications WHERE application_id = #{id}"
+	rs2 = dbh.execute(qry)
+	rs2.each(:symbolize_keys => true)
+	@app_users = Hash.new
+	if rs2.do then
+	  rs2.each do |row|
+	    @app_users[row[:app_user_id]] = InfraAppUser.new(dbh, row[:app_user_id])
+	  end
+	end
+
+    # Grab the application database from the association table
+	qry = "SELECT db_instance_db_name_id FROM application_db_instance_db_names WHERE application_id = #{id}"
+	rs3 = dbh.execute(qry)
+	rs3.each(:symbolize_keys => true)
+	@didn = Hash.new
+	if rs3.do then
+	  rs3.each do |row|
+	    @didn[row[:db_instance_db_name_id]] = InfraDbInstanceDbName.new(dbh, row[:db_instance_db_name_id])
 	  end
 	end
   end
@@ -105,6 +127,12 @@ class InfraApplication
   end
   def hosts
     @hosts
+  end
+  def app_users
+    @app_users
+  end
+  def db_instance_db_names
+    @didn
   end
 end
 ###
@@ -196,8 +224,8 @@ class InfraAppUser
 	result.each do |row|
 	  @name        = row[:name]
 	  @description = row[:description]
+	  @app_user_type = InfraAppUserType.new(dbh, row[:app_user_type_id])
 	end
-	@app_user_type = InfraAppUserType.new(dbh, row[:app_user_type_id])
   end
   def name
     @name
@@ -568,6 +596,79 @@ end
 ###
 ### Database classes ###
 ###
+class InfraCluster
+  def initialize(dbh, id)
+    @id = id
+	qry = "SELECT * FROM db_clusters WHERE id = '#{id}'"
+	result = dbh.execute(qry)
+	result.each(:symbolize_keys => true)
+	result.each do |row|
+	  @name        = row[:name]
+	  @description = row[:description]
+	end
+  end
+  def name
+    @name
+  end
+  def description
+    @description
+  end
+  def name
+    @name
+  end
+end
+class InfraDbServer
+  def initialize(dbh, id)
+    @id = id
+	qry = "SELECT * FROM db_servers WHERE id = '#{id}'"
+	result = dbh.execute(qry)
+	result.each(:symbolize_keys => true)
+	result.each do |row|
+	  @name        = row[:name]
+	  @description = row[:description]
+	end
+	# Grab the hosts details from the association table
+	qry = "SELECT host_id FROM db_server_hosts WHERE db_server_id = #{id}"
+	rs1 = dbh.execute(qry)
+	rs1.each(:symbolize_keys => true)
+	@hosts = Hash.new
+	if rs1.do then
+	  rs1.each do |row|
+	    @hosts[row[:host_id]] = InfraHost.new(dbh, row[:host_id])
+	  end
+	end
+  end
+  def name
+    @name
+  end
+  def description
+    @description
+  end
+  def hosts
+    @hosts
+  end
+end
+class InfraServerApp
+  def initialize(dbh, id)
+    @id = id
+	qry = "SELECT * FROM db_instances WHERE id = '#{id}'"
+	result = dbh.execute(qry)
+	result.each(:symbolize_keys => true)
+	result.each do |row|
+	  @name        = row[:name]
+	  @description = row[:description]
+	end
+  end
+  def name
+    @name
+  end
+  def description
+    @description
+  end
+  def name
+    @name
+  end
+end
 class InfraDbInstance
   def initialize(dbh, id)
     @id = id
@@ -575,7 +676,79 @@ class InfraDbInstance
 	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @name = row[:name]
+	  @name          = row[:name]
+	  @description   = row[:description]
+	  #@db_server_id  = row[:db_server_id]
+	  row[:db_server_id].each do |r| @db_server = InfraDbServer.new row[:db_server_id] end
+	  @server_app_id = row[:server_app_id]
 	end
+    # Grab the db_servers
+    qry = "SELECT host_id FROM db_server_hosts WHERE db_server_id = #{@db_server_id}"
+	rs1 = dbh.execute(qry)
+	rs1.each(:symbolize_keys => true)
+	@hosts = Hash.new
+	if rs1.do then
+	  rs1.each do |row|
+	    @hosts[row[:host_id]] = InfraHost.new(dbh, row[:host_id])
+	  end
+	end
+	
+  end
+  def name
+    @name
+  end
+  def description
+    @description
+  end
+  def db_server_id
+    @db_server_id
+  end
+  def server_app_id
+    @server_app
+  end
+end
+class InfraDbName
+  def initialize(dbh, id)
+    @id = id
+	qry = "SELECT * FROM db_names WHERE id = '#{id}'"
+	result = dbh.execute(qry)
+	result.each(:symbolize_keys => true)
+	result.each do |row|
+	  @name        = row[:name]
+	  @description = row[:description]
+	end
+  end
+  def name
+    @name
+  end
+  def description
+    @description
+  end
+  def name
+    @name
+  end
+end
+class InfraDbInstanceDbName
+  def initialize(dbh, id)
+    @id = id
+	qry = "SELECT * FROM db_instance_db_names WHERE id = '#{id}'"
+	result = dbh.execute(qry)
+	result.each(:symbolize_keys => true)
+	result.each do |row|
+	  @db_instance = InfraDbInstance.new()dbh, row[:db_instance_id])
+	  @db_name     = InfraDbName.new()dbh, row[:db_name_id])
+	end
+  end
+  def db_instance
+    @db_instance
+  end
+  def db_instance_name
+    @db_instance.name
+  end
+  def db_name
+    @db_name
+  end
+  def db_name_name
+    @db_name.name
   end
 end
