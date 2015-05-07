@@ -34,7 +34,7 @@ class InfraApplication
 	rs1 = dbh.execute(qry)
 	rs1.each(:symbolize_keys => true)
 	@hosts = Hash.new
-	if rs1.do then
+	if rs1.any?then
 	  rs1.each do |row|
 	    @hosts[row[:host_id]] = InfraHost.new(dbh, row[:host_id])
 	  end
@@ -45,7 +45,7 @@ class InfraApplication
 	rs2 = dbh.execute(qry)
 	rs2.each(:symbolize_keys => true)
 	@app_users = Hash.new
-	if rs2.do then
+	if rs2.any? then
 	  rs2.each do |row|
 	    @app_users[row[:app_user_id]] = InfraAppUser.new(dbh, row[:app_user_id])
 	  end
@@ -56,7 +56,7 @@ class InfraApplication
 	rs3 = dbh.execute(qry)
 	rs3.each(:symbolize_keys => true)
 	@didn = Hash.new
-	if rs3.do then
+	if rs3.any?then
 	  rs3.each do |row|
 	    @didn[row[:db_instance_db_name_id]] = InfraDbInstanceDbName.new(dbh, row[:db_instance_db_name_id])
 	  end
@@ -632,11 +632,14 @@ class InfraDbServer
 	rs1 = dbh.execute(qry)
 	rs1.each(:symbolize_keys => true)
 	@hosts = Hash.new
-	if rs1.do then
+	if rs1.any?then
 	  rs1.each do |row|
 	    @hosts[row[:host_id]] = InfraHost.new(dbh, row[:host_id])
 	  end
 	end
+  end
+  def id
+    @id
   end
   def name
     @name
@@ -651,16 +654,13 @@ end
 class InfraServerApp
   def initialize(dbh, id)
     @id = id
-	qry = "SELECT * FROM db_instances WHERE id = '#{id}'"
+	qry = "SELECT * FROM server_apps WHERE id = '#{id}'"
 	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
 	  @name        = row[:name]
 	  @description = row[:description]
 	end
-  end
-  def name
-    @name
   end
   def description
     @description
@@ -678,16 +678,16 @@ class InfraDbInstance
 	result.each do |row|
 	  @name          = row[:name]
 	  @description   = row[:description]
-	  #@db_server_id  = row[:db_server_id]
-	  row[:db_server_id].each do |r| @db_server = InfraDbServer.new row[:db_server_id] end
-	  @server_app_id = row[:server_app_id]
+	  @db_server     = InfraDbServer.new(dbh, row[:db_server_id])
+	  @server_app    = InfraServerApp.new(dbh, row[:server_app_id])
 	end
-    # Grab the db_servers
-    qry = "SELECT host_id FROM db_server_hosts WHERE db_server_id = #{@db_server_id}"
+	
+    # Grab the db server hosts
+    qry = "SELECT host_id FROM db_server_hosts WHERE db_server_id = #{@db_server.id}"
 	rs1 = dbh.execute(qry)
 	rs1.each(:symbolize_keys => true)
 	@hosts = Hash.new
-	if rs1.do then
+	if rs1.any?then
 	  rs1.each do |row|
 	    @hosts[row[:host_id]] = InfraHost.new(dbh, row[:host_id])
 	  end
@@ -700,10 +700,10 @@ class InfraDbInstance
   def description
     @description
   end
-  def db_server_id
-    @db_server_id
+  def db_server
+    @db_server
   end
-  def server_app_id
+  def server_app
     @server_app
   end
 end
@@ -717,9 +717,6 @@ class InfraDbName
 	  @name        = row[:name]
 	  @description = row[:description]
 	end
-  end
-  def name
-    @name
   end
   def description
     @description
@@ -735,8 +732,8 @@ class InfraDbInstanceDbName
 	result = dbh.execute(qry)
 	result.each(:symbolize_keys => true)
 	result.each do |row|
-	  @db_instance = InfraDbInstance.new()dbh, row[:db_instance_id])
-	  @db_name     = InfraDbName.new()dbh, row[:db_name_id])
+	  @db_instance = InfraDbInstance.new(dbh, row[:db_instance_id])
+	  @db_name     = InfraDbName.new(dbh, row[:db_name_id])
 	end
   end
   def db_instance
@@ -750,5 +747,21 @@ class InfraDbInstanceDbName
   end
   def db_name_name
     @db_name.name
+  end
+end
+class InfraEnterpriseApplication
+  def initialize(dbh, id)
+  end
+end
+class InfraApplicationEnterpriseApplication
+def initialize(dbh, id)
+    @id = id
+	qry = "SELECT * FROM application_enterprise_applications WHERE application_id = '#{id}'"
+	result = dbh.execute(qry)
+	result.each(:symbolize_keys => true)
+	result.each do |row|
+	  @application = InfraDbInstance.new(dbh, row[:application_id])
+	  @enterprise_application     = InfraApplication.new(dbh, row[:enterprise_application_id])
+	end
   end
 end

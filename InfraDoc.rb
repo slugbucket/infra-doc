@@ -71,28 +71,36 @@ class InfraDoc < Prawn::Document
   ###
   def application_page(app = nil)
     nil unless app.id
-  puts "Preparing application table for #{app.name}, id #{app.id}"
+puts "Preparing application table for #{app.name}, id #{app.id}"
     start_new_page
+
 	# Get the host details
 	host_row = get_hosts_table(app.hosts)
 	app_user_row = get_app_users_table(app.app_users)
-	didn_ary = get_database_names_and_instances(app.db_instance_db_names)
+	didn_row = get_database_names_and_instances(app.db_instance_db_names)
 
-	bounding_box([50,700], :width => 450, :height => 625) do
+	move_down 10
+    text "Application details", :align => :left, :size => 18
+	move_down 5
+	bounding_box([50,675], :width => 450) do
+	  
 	  appinfo = [
         [{:content => app.name, :colspan => 4, :align => :left}],
-        ["Type: #{app.application_type_name}", "Status : #{app.application_status_name}", "Vendor : #{app.vendor_name}", "Shutdown: #{app.dr_shutdown_stage_name}"],
+        ["Type: #{app.application_type_name}",
+		 "Status: #{app.application_status_name}",
+		 "Vendor: #{app.vendor_name}",
+		 "Shutdown: #{app.dr_shutdown_stage_name}"],
         [{:content => app.description, :colspan => 4, :align => :left}],
         ["Contact: #{app.support_contact_name}",
          "Group: #{app.support_group_name}",
          "Impact: #{app.impact_level_name}",
          "Escalation: #{app.escalation_level_name}"],
         [{:content => "Hosts", :colspan => 4}],
-		[{:content => host_row, :colspan => 4, :width => 450}],
+		[{:content => host_row, :colspan => 4, :width => bounds.width}],
         [{:content => "Databases", :colspan => 4}],
-		["","","",""],
+		[{:content => didn_row, :colspan => 4, :width => bounds.width}],
 		[{:content => "Users", :colspan => 4}],
-		[{:content => app_user_row, :colspan => 4, :width => 450}]
+		[{:content => app_user_row, :colspan => 4, :width => 450, :width => bounds.width}]
       ]
       table appinfo, :cell_style => {:overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080"} do
         row(0).font_style = :bold
@@ -120,9 +128,29 @@ class InfraDoc < Prawn::Document
       end
 	  
     end
+	move_down 5
+	text "Maintenance details", :align => :left, :size => 18
+	move_down 5
+	text "Hosts", :align => :left, :size => 14
+	table get_host_maintenance(app.hosts), {:position => 50, :column_widths => {0 => 80}, :width => 450, :cell_style => {:overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080"}} do
+	  column(0).background_color = "c0c0c0"
+	  column(1).background_color = "e0e0e0"
+	end
+	move_down 5
+	text "Database servers", :align => :left, :size => 14
+	table get_db_maintenance(app.db_instance_db_names), {:position => 50, :column_widths => {0 => 80}, :width => 450, :cell_style => {:overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080"}} do
+	  column(0).background_color = "c0c0c0"
+	  column(1).background_color = "e0e0e0"
+	end
+	
+	# Associated applications
+	move_down 5
+	text "Associated applications", :align => :left, :size => 18
 	#start_new_page
 	#puts "App user array for app id #{app.id} consists of #{app_user_row}"
 	#table app_user_row
+	rescue Prawn::Errors::EmptyTable => et
+	  text "Error: Empty table for #{app.name}."
   end
   
   private
@@ -162,18 +190,14 @@ class InfraDoc < Prawn::Document
   ### Get an array of hosts with suitable additional support information ###
   ###
   def get_hosts_table(host_ary = nil)
-  return [["None", "", ""]] if host_ary.empty?
-    #host_ary.each do |id, host| puts "Found host: #{id} name: #{host.name} at #{host.location.name}." end
+    return [["None", "", ""]] if host_ary.empty?
+ 
 	rows = []
 	host_ary.each do |id, host| 
-	  #puts "Making row for #{host.name}"
 	  row = []
-	  row << host.name << host.operating_system_name << host.warranty
-	  #puts row
+	  row << host.name << host.operating_system_name << host.model_name << host.service_level_name
 	  rows << row
 	end
-	#puts rows
-	#t = make_table rows, {:column_widths => [100, 100, 250], :cell_style => {:size => 6, :overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080", :background_color => "e0e0e0"} }
 	return rows
   end
   ###
@@ -182,35 +206,57 @@ class InfraDoc < Prawn::Document
   def get_app_users_table(app_user_ary = nil)
     return [["None", "", ""]] if app_user_ary.empty?
 	
-    #app_user_ary.each do |id, app_user| puts "Found app_user: #{id} name: #{app_user.name} at #{app_user.app_user_type.name}." end
-	rows = []
+    rows = []
 	app_user_ary.each do |id, app_user| 
 	  row = []
 	  row << app_user.name << app_user.app_user_type_name << app_user.description
 	  rows << row
 	end
-	#puts rows
-	#t = make_table rows, {:column_widths => [100, 100, 250], :cell_style => {:size => 6, :overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080", :background_color => "e0e0e0"} }
 	return rows
   end
   ###
   ### Get an array of databases and instances with suitable additional support information ###
   ###
   def get_database_names_and_instances(didn_ary = nil)
-  return [["None", "", ""]] if didn_ary.empty?
-  puts "Found #{didn_ary.size} database/instance pairs for the application."
+    return [["None", "", ""]] if didn_ary.empty?
   
-  didn_ary.each do |id, didn| puts "Found instance: #{didn.db_instance_name} name: #{didn.db_name_name}." end
-	rows = []
+    rows = []
 	didn_ary.each do |id, didn| 
-	  #puts "Making user row for #{app_user.name}"
 	  row = []
-	  row << didn.db_instance_name << didn.db_name_name << app_user.description
-	  #puts row
+	  row << didn.db_instance_name << didn.db_name_name << didn.db_instance.server_app.name
 	  rows << row
 	end
-	#puts rows
-	#t = make_table rows, {:column_widths => [100, 100, 250], :cell_style => {:size => 6, :overflow => :shrink_to_fit, :border_line => [:dotted], :border_width => 0.1, :border_color => "808080", :background_color => "e0e0e0"} }
 	return rows
+  rescue NoMethodError => e
+    return [["Database names and instances error occurred", ""]]
+  end
+  def get_host_maintenance(ary = nil)
+    return [["None", ""]] if ary.empty?
+
+	rows = []
+	ary.each do |id, host|
+	  row = []
+	  row << host.name << host.warranty
+	  rows << row
+	end
+	return rows
+  rescue NoMethodError => e
+    return [["Host maintenance error", ""]]
+  end
+  # db_instance_db_names.db_instance.db_server.hosts
+  def get_db_maintenance(ary = nil)
+    return [["None", ""]] if ary.empty?
+
+	rows = []
+	ary.each do |id, didn|
+	  didn.db_instance.db_server.hosts.each do |i, host|
+	    row = []
+	    row << host.name << host.warranty
+	    rows << row
+	  end
+    end
+	return rows
+  rescue NoMethodError => e
+    return [["Database maintenance error", ""]]
   end
 end
